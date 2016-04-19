@@ -154,7 +154,7 @@ public class Server {
     static String list (String param) {
 
         // System.out.println("Server Trying to ListAll");
-        String res = version + " 200 OK\n";
+        String res = version + " 200 OK\n\n" + "RFC Files List:\n";
         boolean found = false;
 
         switch (param) {
