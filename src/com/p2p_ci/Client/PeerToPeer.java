@@ -1,5 +1,7 @@
 package com.p2p_ci.Client;
 
+import sun.misc.Cleaner;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -37,10 +39,12 @@ public class PeerToPeer implements Runnable {
 
             while(true){
 
+                //  Block until a Peer want to download a file from here;
                 curr = peerUpload.accept();
                 in = new DataInputStream(curr.getInputStream());
                 out = new DataOutputStream(curr.getOutputStream());
 
+                //  Receiving request message;
                 String request = "";
                 while(true) {
                     String tmp = in.readUTF();
@@ -49,6 +53,7 @@ public class PeerToPeer implements Runnable {
                     request = request + tmp;
                 }
 
+                //  Check version;
                 String[] requests = request.split("\n");
                 String[] firstLine = requests[0].split(" ");
                 if( !firstLine[3].equals(Client.version) ) {
@@ -58,6 +63,7 @@ public class PeerToPeer implements Runnable {
                     out.writeUTF("EndOfMsg");
                 }
                 else{
+                    //  Get method;
                     String method = firstLine[0];
                     int rfcNum = Integer.parseInt(firstLine[2]);
                     String downloadDir = "";
@@ -76,13 +82,17 @@ public class PeerToPeer implements Runnable {
 
                                 File file = new File(downloadDir);
 
-                                data = data + Client.version + " 200 OK\n" +
+                                //  Construct file header;
+                                String header = "";
+                                header = header + Client.version + " 200 OK\n" +
                                         "Date: " + currDate + "\n" +
                                         "OS: " + props.getProperty("os.name") + " " + props.getProperty("os.version") + "\n" +
                                         "Last-Modified: " + format.format(file.lastModified()) + "\n" +
                                         "Content-Length: " + file.length() + "\n" +
                                         "Content-Type: text/text\n";
-//                                System.out.println("The File Header:\n" + data);
+//                                System.out.println("The File Header:\n" + header);
+
+                                //  Buffering download content;
                                 BufferedReader br = new BufferedReader(new FileReader(downloadDir));
                                 String line = "";
                                 StringBuffer buffer = new StringBuffer();
@@ -93,7 +103,14 @@ public class PeerToPeer implements Runnable {
 //                                System.out.println("File Contents:\n" +
 //                                        fileContent);
 
-                                data = data + fileContent;
+                                //  Sending response message;
+                                out.writeUTF(header);
+                                out.writeUTF("EndOfMsg");
+
+//                                data = data + fileContent;
+                                data = fileContent;
+
+                                //  Sending file data;
                                 out.writeUTF(data);
                             }
                             else{
@@ -109,9 +126,11 @@ public class PeerToPeer implements Runnable {
                 }
             }
         }
-        catch (SocketException e) {}
+        catch (SocketException e) {
+            System.out.println("PeerToPeer Thread Closed !");
+        }
         catch (IOException e){
-            System.out.println(e);
+            e.printStackTrace();
         }
     }
 
