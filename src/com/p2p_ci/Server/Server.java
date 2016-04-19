@@ -15,7 +15,7 @@ public class Server {
     private static LinkedList<peerRFC> peerRFCs;
 
     //Parameters of Server
-    public final static String serverAddr = "192.168.1.4";
+    public final static String serverAddr = "192.168.1.3";
     public final static int serverPort = 7734;
     public final static String version = "P2P-CI/1.0";
 
@@ -26,47 +26,49 @@ public class Server {
 
     public static void main(String[] args) throws IOException {
 
-        //Initialization
+        //  Initialization;
         serverMain = new ServerSocket(serverPort);
-        System.out.println("ServerMain: Server is running.");
-        System.out.println("ServerMain: Version: "+Server.version+"   Port: "+Server.serverPort);
-        System.out.println("ServerMain: Listening...");
+
+//        System.out.println("ServerMain: Server is running.");
+        System.out.println("ServerMain: Version: " + Server.version + "   Port: " + Server.serverPort + "  Listening...");
+
+        //  Keep track of client and its files;
         activePeers = new LinkedList();
         peerRFCs = new LinkedList();
 
         while(true){
+
+            //  Block until new client come in;
             Socket curr  = serverMain.accept();
-            try
-            {
+
+            //  Create a new thread to handle with the new client;
+            try {
 
                 Thread t = new Thread(new ServerToClient(curr));
                 t.start();
-                // System.out.println("Get one..."+"Accept Client:  " + socket);
-                // BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                // PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-                // while(true) {
-                //     String str = in.readLine();
-                //     if(str.equals("BYE"))
-                //     {
-                //         break;
-                //     }
-                //     System.out.println(str);
-                //     out.println("Hello");
-                // }
+
             }
             catch(Exception e){
                 System.out.println(e);
             }
         }
+
     }
 
+    /**
+     * This function will add a new comming client to the active Peer List;
+     * @param currPeerAddr
+     * @param currPeerPort
+     */
     static void addNewPeer(String currPeerAddr, int currPeerPort) {
-        System.out.println("ServerMain: New Active Peers:\n" +
-                currPeerAddr + " Upload Port#: " + currPeerPort);
+
+//        System.out.println("ServerMain: New Active Peers:\n" +
+//                currPeerAddr + " Upload Port#: " + currPeerPort);
 
         String[] tmp = currPeerAddr.split(":");
         String host = tmp[0];
 
+        //  Check if the client is already in the list;
         boolean exist = false;
         for(activePeer i:activePeers){
             if(i.gethostName().equals(host) && i.getportNumber() == currPeerPort){
@@ -75,15 +77,23 @@ public class Server {
             }
         }
 
+        //  If not, then add this client info into the active Peer List;
         if(!exist)
             activePeers.add(new activePeer(host, currPeerPort));
 
 //        System.out.println("ServerMain: Now Active Peers: ");
 //        for(activePeer i:activePeers)
 //            System.out.println(i.gethostName()+" "+i.getportNumber());
+
     }
 
+    /**
+     * This function will add a new comming client`s RFC files to the Peer RFC list;
+     * @param rfc
+     */
     static void addPeerRFCs (peerRFC rfc) {
+
+        // Check if this RFC file with this client info is already in the list;
         boolean exist = false;
 
         for(peerRFC i:peerRFCs)
@@ -93,6 +103,7 @@ public class Server {
                 break;
             }
 
+        //  If not, then add it to the list;
         if(!exist)
             peerRFCs.add(rfc);
 
@@ -103,15 +114,23 @@ public class Server {
 //            System.out.println(i.hostName());
 //            System.out.println(i.numRFC());
 //        }
+
     }
 
+    /**
+     * This function will lookup a certain RFC num file with a certain name(option);
+     * @param numrfc
+     * @param title
+     * @return
+     */
     static String lookupRFCs (int numrfc, String title) {
+
         // System.out.println("Server Trying to Find: "+"="+numrfc+"="+title+"=");
         String res = version + " 200 OK\n";
         boolean found = false;
 
         for(peerRFC i:peerRFCs){
-            if(i.numRFC() == numrfc || i.gettitle().equals(title)){
+            if(i.numRFC() == numrfc || i.gettitle().equals(title)){             //Decide numrfc match or title match or both;
                 for(activePeer j:activePeers)
                     if(j.gethostName().equals(i.hostName())) {
                         found = true;
@@ -119,13 +138,21 @@ public class Server {
                     }
             }
         }
+
         if(found)
             return res;
         else
             return version + " 404 Not Found";
+
     }
 
+    /**
+     * This function will list all rfc records kept in the Server;
+     * @param param can be modified list for a certain file or a certain client;
+     * @return
+     */
     static String list (String param) {
+
         // System.out.println("Server Trying to ListAll");
         String res = version + " 200 OK\n";
         boolean found = false;
@@ -148,11 +175,18 @@ public class Server {
             return res;
         else
             return version + " 404 Not Found";
+
     }
 
+    /**
+     * This function will get executed when a client trying to leave this P2P server,
+     * it will delete all the infomation about this client and its rfc files;
+     * @param reHost
+     */
     static void remove (String reHost) {
 //        System.out.println("Host: " + reHost + " is going to Leave");
 
+        //  Remove RFC file record;
         Iterator i;
         i = peerRFCs.listIterator();
         while(i.hasNext()) {
@@ -161,6 +195,7 @@ public class Server {
                 i.remove();
         }
 
+        //  Remove active Client record;
         Iterator j;
         j = activePeers.listIterator();
         while(j.hasNext()) {
@@ -197,6 +232,7 @@ class activePeer {
     public int getportNumber() {
         return portNumber;
     }
+
 }
 
 class peerRFC {
@@ -221,4 +257,5 @@ class peerRFC {
     public String hostName() {
         return hostName;
     }
+
 }
