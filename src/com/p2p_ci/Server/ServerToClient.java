@@ -16,7 +16,11 @@ public class ServerToClient implements Runnable {
     private String currPeerAddr;
     private int currPeerPort = -1;
 
-
+    /**
+     * Constructor;
+     * @param curr
+     * @throws IOException
+     */
     public ServerToClient(Socket curr) throws IOException {
         this.currSocket = curr;
         this.in = new DataInputStream(currSocket.getInputStream());
@@ -25,7 +29,8 @@ public class ServerToClient implements Runnable {
     }
 
     public void run() {
-        System.out.println("S2C: New Thread!");
+
+        System.out.println("ServerToClient: New Thread! At: " + currPeerAddr);
 
         currPeerAddr = (currPeerAddr.split(":"))[0];
 
@@ -59,32 +64,24 @@ public class ServerToClient implements Runnable {
             System.out.println(e);
         }
 
+        //  Add this new Peer to the Peer List;
         if(currPeerPort != -1)
             Server.addNewPeer(currPeerAddr, currPeerPort);
 
-
-//            catch (IOException e)
-//            {
-//                System.out.println(e);
-//            }
-//            catch (SocketTimeoutException s)
-//            {
-//                System.out.println("Client: "+currPeerAddr+" Timeout!");
-//            }
-
+        //  Waiting for the command from this Client;
         try {
+
             waitRequest();
 
             currSocket.close();
-            System.out.println("S2C: Connection Terminated.");
+            System.out.println("ServerToClient: Connection Terminated. At: " + currPeerAddr);
+
         }
         catch (IOException e){
-            System.out.println("catch!");
-            System.out.println(e);
+            e.printStackTrace();
         }
         catch (MessageException m){
-            System.out.println("catch!");
-            System.out.println(m);
+            m.printStackTrace();
         }
         finally {
             return;
@@ -101,9 +98,9 @@ public class ServerToClient implements Runnable {
         out.writeUTF("EndOfMsg");
 
         while(true){
+            //  Flag for leaving the System;
             boolean leave = false;
 
-//            String msg = in.readUTF();
             String msg = "";
              while(true){
                  String m = in.readUTF();
@@ -113,6 +110,7 @@ public class ServerToClient implements Runnable {
              }
 //            System.out.println("newMsg:\n" + msg);
 
+            //  Reform the command message;
             String[] lines = msg.split("\n");
             String[] firstLine = lines[0].split(" ");
             int firstLineSize = firstLine.length;
@@ -180,6 +178,12 @@ public class ServerToClient implements Runnable {
 //        System.out.println("S2C: Server Stop Listening");
     }
 
+    /**
+     * This function will add a new RFC file to the Server`s RFC list;
+     * @param newReg
+     * @return
+     * @throws MessageException
+     */
     public int addPeerRFC(String newReg) throws MessageException{
 
         String[] tmp = newReg.split("\n");
@@ -194,8 +198,9 @@ public class ServerToClient implements Runnable {
         String[] hosts = tmp[1].split(": ");
         String[] ports = tmp[2].split(": ");
         String[] titles = tmp[3].split(": ");
+
         if(methods.length != 4 || hosts.length != 2 || ports.length != 2 || titles.length != 2 || !methods[0].equals("ADD")) {
-            System.out.println("2");
+            System.out.println("regInfo format Error!");
             throw new MessageException();
         }
 
@@ -207,4 +212,5 @@ public class ServerToClient implements Runnable {
 
 }
 
+//  Message Exception, can be modified;
 class MessageException extends Exception {}
