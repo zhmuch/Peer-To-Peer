@@ -3,14 +3,15 @@ package com.p2p_ci.Client;
 /**
  * Created by zhmuch on 2016/3/5.
  */
+import com.p2p_ci.Server.Server;
+
 import java.net.*;
 import java.io.*;
 import java.util.*;
 
-
 public class Client {
 
-    public static String serverAddress = "192.168.1.4";
+    public static String serverAddress = "192.168.1.3";
     public static int serverPort = 7734;
 
     public final static String version = "P2P-CI/1.0";
@@ -27,9 +28,11 @@ public class Client {
 
     public static void main(String[] args) throws IOException {
 
+        //  Read all files in the RFC local directory;
         File file = new File(localDirectory);
         String files[] = file.list();
 
+        //  Store all RFC info in localRFCs;
         for (int i = 0; i < files.length; i++) {
             String[] tmp = files[i].split("_");
             if (tmp.length != 2)
@@ -39,13 +42,16 @@ public class Client {
             String title = tmp[1];
             localRFCs.add(new localRFC(rfcNum, title));
         }
-        //        System.out.println("Local RFCs Lists: ");
-        //        for(localRFC i:localRFCs){
-        //            System.out.println(i.numRFC());
-        //            System.out.println(i.gettitle());
-        //        }
 
+//                System.out.println("Local RFCs Lists: ");
+//                for(localRFC i:localRFCs){
+//                    System.out.println(i.numRFC());
+//                    System.out.println(i.gettitle());
+//                }
+
+        //  Trying to connect Server;
         try {
+
             Socket clientMain = new Socket(serverAddress, serverPort);
 
             in = new DataInputStream(clientMain.getInputStream());
@@ -54,6 +60,7 @@ public class Client {
             localHost = ("" + clientMain.getLocalAddress()).substring(1);
             localPort = Integer.parseInt("" + clientMain.getLocalPort());
 
+            //  Add all local RFC records to the Server;
             for (localRFC i : localRFCs) {
                 String tmp = "ADD RFC " + i.numRFC() + " " + version + "\n" +
                         "Host: " + localHost + "\n" +
@@ -67,7 +74,7 @@ public class Client {
 //            System.out.println("regInfo: ");
 //            System.out.println(regInfo);
 
-            //Greeting Message
+            //  Greeting Message;
             String greetMsg = "";
             while (true) {
                 String tmp = in.readUTF();
@@ -78,15 +85,17 @@ public class Client {
             System.out.println("Successfully Registered at " + clientMain.getInetAddress());
             System.out.println(greetMsg);
 
-            //Run upload server process
+            //  Run upload server process;
             ServerSocket peerU = new ServerSocket(localUploadPort);
             Thread upload = new Thread(new PeerToPeer(localHost, localUploadPort, peerU));
             upload.start();
 
             waitRequest();
 
+            //  If exit, then terminate PeerToPeer thread, and all the sockets;
             clientMain.close();
             peerU.close();
+
             System.out.println("Successfully Disconnected!");
             flag = true;
         }
@@ -100,12 +109,14 @@ public class Client {
 
         while(true){
 
-//            System.out.println("Please Enter New Request: \n" +
-//                    "ADD, to add a locally available RFC to the server`s index,\n" +
-//                    "LOOKUP, to find peers that have the specified RFC,\n" +
-//                    "LIST, to request the whole index of RFCs from the server,\n" +
-//                    "DOWNLOAD, to download a RFC file from another peer,\n" +
-//                    "EXIT, to disconnect from the P2P-CI server.");
+            System.out.println("=========================================================\n" +
+                    "ADD, to add a locally available RFC to the server`s index,\n" +
+                    "LOOKUP, to find peers that have the specified RFC,\n" +
+                    "LIST, to request the whole index of RFCs from the server,\n" +
+                    "DOWNLOAD, to download a RFC file from another peer,\n" +
+                    "EXIT, to disconnect from the P2P-CI server.\n" +
+                    "=========================================================\n" +
+                    "Please Enter New Request: \n");
 
             BufferedReader keybd = new BufferedReader(new InputStreamReader(System.in));
             String type = keybd.readLine();
@@ -136,10 +147,8 @@ public class Client {
                         out.writeUTF(addMsg);
                         out.writeUTF("EndOfMsg");
                     }
-                    else {
-                        waitForServer = false;
+                    else
                         System.out.println("RFC " + numRFCAdd + " Not Found!");
-                    }
                     break;
                 case "LOOKUP":
                     System.out.println("Please Enter RFC Number: ");
@@ -155,13 +164,14 @@ public class Client {
                     out.writeUTF("EndOfMsg");
                     break;
                 case "LIST":
-                    System.out.println("Sending LIST Request: ");
+//                    System.out.println("Sending LIST Request: ");
 
                     String listMsg = "LIST ALL " + version + "\n" +
                             "Host: " + localHost + "\n" +
                             "Port: " + localUploadPort;
                     out.writeUTF(listMsg);
                     out.writeUTF("EndOfMsg");
+
                     break;
                 case "DOWNLOAD":
                     waitForServer = false;
@@ -174,14 +184,14 @@ public class Client {
                     int numRFCtoDown = Integer.parseInt(keybd.readLine());
                     System.out.println("Please Enter File Name: ");
                     String rfcName = keybd.readLine();
-                    rfcName = "RFC " + numRFCtoDown + "_" + rfcName;
+                    String rfcToDown = "RFC " + numRFCtoDown + "_" + rfcName;
 
                     Properties props = System.getProperties();
                     String req = "GET RFC " + numRFCtoDown + " " + version + "\n" +
                             "Host: " + localHost + "\n" +
                             "OS: " + props.getProperty("os.name") + " " + props.getProperty("os.version") + "\n";
 
-                    if(download(tarAddr, tarPort, req, rfcName)) {
+                    if(download(tarAddr, tarPort, req, rfcToDown)) {
                         //Add a new RFC record to localRFCs.
                         localRFCs.add(new localRFC(numRFCtoDown, rfcName));
 
@@ -228,6 +238,11 @@ public class Client {
         }
     }
 
+    /**
+     * This function will find a certain RFC file stored in the local directory;
+     * @param rfcNum
+     * @return
+     */
     public static String find (int rfcNum) {
         String res = "";
 
@@ -247,16 +262,39 @@ public class Client {
         return res;
     }
 
+    /**
+     * This function will try to download a RFC file from a peer;
+     * @param tarAddr
+     * @param tarPort
+     * @param req
+     * @param rfcName
+     * @return
+     */
     private static boolean download (String tarAddr, int tarPort, String req, String rfcName) {
+        //  Flag;
         boolean succ = false;
+
         try {
             Socket tempDownload = new Socket(tarAddr, tarPort);
             DataInputStream tempIn = new DataInputStream(tempDownload.getInputStream());
             DataOutputStream tempOut = new DataOutputStream(tempDownload.getOutputStream());
 
+            //  Sending request to a Peer;
             tempOut.writeUTF(req);
             tempOut.writeUTF("EndOfMsg");
 
+            //  Receiving Response Message;
+            String resp = "";
+            while(true) {
+                String t = tempIn.readUTF();
+                if(t.equals("EndOfMsg"))
+                    break;
+                resp = resp + t;
+            }
+            System.out.println("Peer`s Response Message: ");
+            System.out.println(resp);
+
+            //  Receiving data of the RFC file;
             String msg = "";
             while(true) {
                 String t = tempIn.readUTF();
@@ -265,21 +303,27 @@ public class Client {
                 msg = msg + t;
             }
 
-            System.out.println("Downloaded File Contents:\n" +
-                    msg);
-            File txt = new File(localDirectory + rfcName + "Newly Download");
+//            System.out.println("Downloaded File Contents:\n" +
+//                    msg);
+
+            //  Writing the file data to a local file;
+            File txt = new File(localDirectory + rfcName);
             if( !txt.exists() ){
                 txt.createNewFile();
             }
+
             byte bytes[];
-            bytes = msg.getBytes(); //新加的
-            int b = msg.length(); //改
+            bytes = msg.getBytes();
+            int b = msg.length();
+
             FileOutputStream fos = new FileOutputStream(txt);
             fos.write(bytes,0,b);
             fos.close();
 
+            //  If the file has been downloaded successfully;
             succ = true;
 
+            //  Close the download socket;
             tempDownload.close();
         }
         catch(IOException e){
