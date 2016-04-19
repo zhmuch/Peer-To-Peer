@@ -212,5 +212,6 @@ public class ServerToClient implements Runnable {
 
 }
 
+
 //  Message Exception, can be modified;
 class MessageException extends Exception {}
