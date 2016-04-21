@@ -15,7 +15,8 @@ public class Client {
     public static int serverPort = 7734;
 
     public final static String version = "P2P-CI/1.0";
-    public final static String localDirectory = "D:\\rfc\\";
+//    public final static String localDirectory = "D:\\rfc\\";        //Windows Directory Style
+    public final static String localDirectory = "/Users/Muchen/Desktop/rfc";
     public final static int localUploadPort = 6666;
 
     public static String localHost;
@@ -28,26 +29,43 @@ public class Client {
 
     public static void main(String[] args) throws IOException {
 
-        //  Read all files in the RFC local directory;
+//        //  Read all files in the RFC local directory; (Windows Method)
+//        File file = new File(localDirectory);
+//        String files[] = file.list();
+//
+//        //  Store all RFC info in localRFCs;
+//        for (int i = 0; i < files.length; i++) {
+//            String[] tmp = files[i].split("_");
+//            if (tmp.length != 2)
+//                System.out.println("Local RFC File Name Error! " + files[i]);
+//
+//            int rfcNum = Integer.parseInt((tmp[0].split(" "))[1]);
+//            String title = tmp[1];
+//            localRFCs.add(new localRFC(rfcNum, title));
+//        }
+
+        //  Read all files in the RFC local directory; (Mac OS Method)
         File file = new File(localDirectory);
-        String files[] = file.list();
+        File[] listOfFiles = file.listFiles();
 
         //  Store all RFC info in localRFCs;
-        for (int i = 0; i < files.length; i++) {
-            String[] tmp = files[i].split("_");
-            if (tmp.length != 2)
-                System.out.println("Local RFC File Name Error! " + files[i]);
+        for (int i = 0; i < listOfFiles.length; i++)
+            if(listOfFiles[i].isFile() && !listOfFiles[i].getName().equals(".DS_Store")){
+                String[] tmp = listOfFiles[i].getName().split("_");
+                if (tmp.length != 2)
+                    System.out.println("Local RFC File Name Error! " + listOfFiles[i].getName());
+                else{
+                    int rfcNum = Integer.parseInt((tmp[0].split(" "))[1]);
+                    String title = tmp[1];
+                    localRFCs.add(new localRFC(rfcNum, title));
+                }
+            }
+        
+//        //  Print Out All Files;
+//        System.out.println("Local RFCs Lists: ");
+//        for(localRFC i:localRFCs)
+//            System.out.println("RFC number: " + i.numRFC() + "  Title: " + i.gettitle());
 
-            int rfcNum = Integer.parseInt((tmp[0].split(" "))[1]);
-            String title = tmp[1];
-            localRFCs.add(new localRFC(rfcNum, title));
-        }
-
-//                System.out.println("Local RFCs Lists: ");
-//                for(localRFC i:localRFCs){
-//                    System.out.println(i.numRFC());
-//                    System.out.println(i.gettitle());
-//                }
 
         //  Trying to connect Server;
         try {
