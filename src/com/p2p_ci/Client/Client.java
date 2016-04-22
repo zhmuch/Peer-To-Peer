@@ -11,12 +11,12 @@ import java.util.*;
 
 public class Client {
 
-    public static String serverAddress = "192.168.1.3";
+    public static String serverAddress = "10.139.65.202";
     public static int serverPort = 7734;
 
     public final static String version = "P2P-CI/1.0";
 //    public final static String localDirectory = "D:\\rfc\\";        //Windows Directory Style
-    public final static String localDirectory = "/Users/Muchen/Desktop/rfc";
+    public final static String localDirectory = "/Users/Muchen/Desktop/rfc/";
     public final static int localUploadPort = 6666;
 
     public static String localHost;
@@ -60,7 +60,7 @@ public class Client {
                     localRFCs.add(new localRFC(rfcNum, title));
                 }
             }
-        
+
 //        //  Print Out All Files;
 //        System.out.println("Local RFCs Lists: ");
 //        for(localRFC i:localRFCs)
@@ -312,37 +312,41 @@ public class Client {
             System.out.println("Peer`s Response Message: ");
             System.out.println(resp);
 
-            //  Receiving data of the RFC file;
-            String msg = "";
-            while(true) {
-                String t = tempIn.readUTF();
-                if(t.equals("EndOfMsg"))
-                    break;
-                msg = msg + t;
-            }
+            if(!resp.equals("P2P-CI/1.0 404 Not Found")) {
+
+                //  Receiving data of the RFC file;
+                String msg = "";
+                while (true) {
+                    String t = tempIn.readUTF();
+                    if (t.equals("EndOfMsg"))
+                        break;
+                    msg = msg + t;
+                }
 
 //            System.out.println("Downloaded File Contents:\n" +
 //                    msg);
 
-            //  Writing the file data to a local file;
-            File txt = new File(localDirectory + rfcName);
-            if( !txt.exists() ){
-                txt.createNewFile();
+                //  Writing the file data to a local file;
+                File txt = new File(localDirectory + rfcName);
+                if (!txt.exists()) {
+                    txt.createNewFile();
+                }
+
+                byte bytes[];
+                bytes = msg.getBytes();
+                int b = msg.length();
+
+                FileOutputStream fos = new FileOutputStream(txt);
+                fos.write(bytes, 0, b);
+                fos.close();
+
+                //  If the file has been downloaded successfully;
+                succ = true;
+
+                //  Close the download socket;
+                tempDownload.close();
+
             }
-
-            byte bytes[];
-            bytes = msg.getBytes();
-            int b = msg.length();
-
-            FileOutputStream fos = new FileOutputStream(txt);
-            fos.write(bytes,0,b);
-            fos.close();
-
-            //  If the file has been downloaded successfully;
-            succ = true;
-
-            //  Close the download socket;
-            tempDownload.close();
         }
         catch(IOException e){
             System.out.println(e);
