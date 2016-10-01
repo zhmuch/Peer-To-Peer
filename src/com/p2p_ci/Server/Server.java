@@ -62,9 +62,6 @@ public class Server {
      */
     static void addNewPeer(String currPeerAddr, int currPeerPort) {
 
-//        System.out.println("ServerMain: New Active Peers:\n" +
-//                currPeerAddr + " Upload Port#: " + currPeerPort);
-
         String[] tmp = currPeerAddr.split(":");
         String host = tmp[0];
 
@@ -80,11 +77,7 @@ public class Server {
         //  If not, then add this client info into the active Peer List;
         if(!exist)
             activePeers.add(new activePeer(host, currPeerPort));
-
-//        System.out.println("ServerMain: Now Active Peers: ");
-//        for(activePeer i:activePeers)
-//            System.out.println(i.gethostName()+" "+i.getportNumber());
-
+        
     }
 
     /**
@@ -107,14 +100,6 @@ public class Server {
         if(!exist)
             peerRFCs.add(rfc);
 
-//        System.out.println("ServerMain: Successfully added!");
-//        System.out.println("Server Main: Now peerRFCs has: ");
-//        for(peerRFC i:peerRFCs){
-//            System.out.println(i.gettitle());
-//            System.out.println(i.hostName());
-//            System.out.println(i.numRFC());
-//        }
-
     }
 
     /**
@@ -125,7 +110,6 @@ public class Server {
      */
     static String lookupRFCs (int numrfc, String title) {
 
-        // System.out.println("Server Trying to Find: "+"="+numrfc+"="+title+"=");
         String res = version + " 200 OK\n";
         boolean found = false;
 
@@ -153,13 +137,11 @@ public class Server {
      */
     static String list (String param) {
 
-        // System.out.println("Server Trying to ListAll");
         String res = version + " 200 OK\n\n" + "RFC Files List:\n";
         boolean found = false;
 
         switch (param) {
             case "ALL":
-//                System.out.println("Server Trying to List All");
                 for(activePeer i:activePeers)
                     for(peerRFC j:peerRFCs)
                         if(i.gethostName().equals(j.hostName())){
@@ -184,7 +166,6 @@ public class Server {
      * @param reHost
      */
     static void remove (String reHost) {
-//        System.out.println("Host: " + reHost + " is going to Leave");
 
         //  Remove RFC file record;
         Iterator i;
@@ -203,15 +184,6 @@ public class Server {
             if(tmp.gethostName().equals(reHost))
                 j.remove();
         }
-
-//        System.out.println("After Leave:\n" +
-//                "activePeers:");
-//        for(activePeer k:activePeers)
-//            System.out.println(k.gethostName() + " " + k.getportNumber());
-//        System.out.println("peerRFCs Records: ");
-//        for(peerRFC k:peerRFCs)
-//            System.out.println(k.hostName() + " " + k.gettitle());
-
     }
 
 }
